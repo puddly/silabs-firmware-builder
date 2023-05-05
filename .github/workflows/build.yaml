@@ -9,8 +9,6 @@ on:
       - EmberZNet/
       - OpenThreadRCP/
       - RCPMultiPAN/
-    branches:
-      - main
     tags:
       - '*'
 
