@@ -131,6 +131,7 @@
 									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/util/silicon_labs/silabs_core&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/protocol/zigbee/stack/core&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/protocol/zigbee/stack/mac&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/protocol/zigbee/app/ncp/plugin/xncp&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/protocol/zigbee/stack/zll&quot;"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.silabs.ide.si32.gcc.cdt.managedbuild.tool.gnu.c.compiler.def.symbols.148468628" name="Defined symbols (-D)" superClass="com.silabs.ide.si32.gcc.cdt.managedbuild.tool.gnu.c.compiler.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
@@ -275,6 +276,7 @@
 									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/util/silicon_labs/silabs_core&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/protocol/zigbee/stack/core&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/protocol/zigbee/stack/mac&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/protocol/zigbee/app/ncp/plugin/xncp&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${StudioSdkPath}/protocol/zigbee/stack/zll&quot;"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.silabs.ide.si32.gcc.cdt.managedbuild.tool.gnu.as.def.symbols.1323127775" name="Defined symbols (-D)" superClass="com.silabs.ide.si32.gcc.cdt.managedbuild.tool.gnu.as.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
@@ -330,6 +332,7 @@
 									<listOptionValue builtIn="false" value="${StudioSdkPath}/protocol/zigbee/build/gcc/cortex-m33/zigbee-r22-support/release_singlenetwork/libzigbee-r22-support.a"/>
 									<listOptionValue builtIn="false" value="${StudioSdkPath}/protocol/zigbee/build/gcc/cortex-m33/ncp-source-route-library/release_singlenetwork/libncp-source-route-library.a"/>
 									<listOptionValue builtIn="false" value="${StudioSdkPath}/protocol/zigbee/build/gcc/cortex-m33/zigbee-source-route/release_singlenetwork/libzigbee-source-route.a"/>
+									<listOptionValue builtIn="false" value="${StudioSdkPath}/protocol/zigbee/build/gcc/cortex-m33/zigbee-xncp/release_singlenetwork/libzigbee-xncp.a"/>
 									<listOptionValue builtIn="false" value="${StudioSdkPath}/protocol/zigbee/build/gcc/cortex-m33/ncp-zll-library/release_singlenetwork/libncp-zll-library.a"/>
 									<listOptionValue builtIn="false" value="${StudioSdkPath}/protocol/zigbee/build/gcc/cortex-m33/zigbee-zll/release_singlenetwork/libzigbee-zll.a"/>
 								</option>
@@ -370,6 +373,7 @@
 									<listOptionValue builtIn="false" value="${StudioSdkPath}/protocol/zigbee/build/gcc/cortex-m33/zigbee-r22-support/release_singlenetwork/libzigbee-r22-support.a"/>
 									<listOptionValue builtIn="false" value="${StudioSdkPath}/protocol/zigbee/build/gcc/cortex-m33/ncp-source-route-library/release_singlenetwork/libncp-source-route-library.a"/>
 									<listOptionValue builtIn="false" value="${StudioSdkPath}/protocol/zigbee/build/gcc/cortex-m33/zigbee-source-route/release_singlenetwork/libzigbee-source-route.a"/>
+									<listOptionValue builtIn="false" value="${StudioSdkPath}/protocol/zigbee/build/gcc/cortex-m33/zigbee-xncp/release_singlenetwork/libzigbee-xncp.a"/>
 									<listOptionValue builtIn="false" value="${StudioSdkPath}/protocol/zigbee/build/gcc/cortex-m33/ncp-zll-library/release_singlenetwork/libncp-zll-library.a"/>
 									<listOptionValue builtIn="false" value="${StudioSdkPath}/protocol/zigbee/build/gcc/cortex-m33/zigbee-zll/release_singlenetwork/libzigbee-zll.a"/>
 								</option>
