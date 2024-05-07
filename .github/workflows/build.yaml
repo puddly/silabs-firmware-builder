@@ -191,8 +191,10 @@ jobs:
   release-assets:
     name: Upload release assets
     needs: [build-firmwares]
-    runs-on: ubuntu-latest
     if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Download all workflow artifacts
         uses: actions/download-artifact@v4
