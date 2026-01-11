@@ -129,7 +129,7 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ needs.check-container.outputs.image_name }}:${{ needs.check-container.outputs.tag_name }}-${{ matrix.arch }}
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ needs.check-container.outputs.image_name }}:cache-${{ matrix.arch }}
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ needs.check-container.outputs.image_name }}:cache-${{ matrix.arch }},mode=max
-          push: true
+          outputs: type=image,compression=zstd,push=true
 
   merge-container:
     name: Create multi-arch manifest
