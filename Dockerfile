@@ -164,3 +164,5 @@ USER $USERNAME
 WORKDIR /repo
 
 ENTRYPOINT ["/opt/venv/bin/python3", "tools/build_project.py"]
+
+# A comment to trigger rebuilds: 0
