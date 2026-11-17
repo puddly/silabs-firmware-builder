@@ -425,9 +425,9 @@ def remap_debug_build_paths(elf_path: pathlib.Path, prefix_map: dict[str, str]) 
             f.write(data)
 
 
-# Manifests ending in this are not built: each names an app manifest and a bootloader
-# manifest, whose GBLs `bundle_gbl` combines into one
-BUNDLE_MANIFEST_SUFFIX = "_with_bootloader"
+# Manifests and GBLs starting with this combine an app with its bootloader. Clients pick
+# firmwares by filename prefix, so the prefix keeps older clients from picking these.
+COMBINED_PREFIX = "combined_"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -501,6 +501,43 @@ class Manifest:
         return evaluate_f_string(
             self.config.get("filename", "{manifest_name}"),
             {"manifest_name": self.name, **template_env},
+        )
+
+
+@dataclasses.dataclass(frozen=True)
+class CombinedManifest:
+    """A manifest that combines the GBLs of an app and its bootloader, building neither."""
+
+    path: pathlib.Path
+    app: Manifest
+    bootloader: Manifest
+
+    @classmethod
+    def load(cls, path: pathlib.Path) -> CombinedManifest:
+        config = yaml.load(path.read_text())
+
+        return cls(
+            path=path,
+            app=Manifest.load(path.parent / config["app"]),
+            bootloader=Manifest.load(path.parent / config["bootloader"]),
+        )
+
+    @property
+    def gbl(self) -> dict[str, typing.Any]:
+        """The app's `gbl` section, which the combined GBL is encrypted and signed by."""
+        return self.app.gbl
+
+    @property
+    def encryption_key_path(self) -> pathlib.Path | None:
+        return self.app.encryption_key_path
+
+    def output_stem(self, metadata: dict[str, typing.Any]) -> str:
+        """The output filename, without an extension, for combined metadata."""
+        bootloader_version = metadata["bootloader"][self.bootloader.version_key]
+
+        return (
+            f"{COMBINED_PREFIX}{self.app.output_stem(metadata)}"
+            f"_and_btl_{bootloader_version}"
         )
 
 

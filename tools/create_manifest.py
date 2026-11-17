@@ -22,7 +22,7 @@ from pygbl import (
     read_encryption_key,
 )
 
-from .build_project import BUNDLE_MANIFEST_SUFFIX, Manifest
+from .build_project import COMBINED_PREFIX, Manifest
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -60,7 +60,7 @@ def load_manifests(directory: pathlib.Path) -> list[Manifest]:
         path
         for pattern in ("*.yaml", "*.yml")
         for path in directory.rglob(pattern)
-        if not path.stem.endswith(BUNDLE_MANIFEST_SUFFIX)
+        if not path.name.startswith(COMBINED_PREFIX)
     )
 
     return [Manifest.load(path) for path in paths]

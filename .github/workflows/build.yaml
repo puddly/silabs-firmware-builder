@@ -217,8 +217,8 @@ jobs:
           persist-credentials: false
       - id: set-matrix
         run: |
-          # `*_with_bootloader` manifests are not built, `bundle-firmwares` handles them
-          echo "matrix=$(find manifests -type f \( -name "*.yaml" -o -name "*.yml" \) -not -name "*_with_bootloader.y*ml" -print | sort | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
+          # `combined_*` manifests are not built, `combine-firmwares` handles them
+          echo "matrix=$(find manifests -type f \( -name "*.yaml" -o -name "*.yml" \) -not -name "combined_*" -print | sort | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
 
   build-firmwares:
     name: Firmware builder
@@ -264,8 +264,8 @@ jobs:
           compression-level: 9
           if-no-files-found: error
 
-  bundle-firmwares:
-    name: Bundle firmwares with bootloaders
+  combine-firmwares:
+    name: Combine firmwares with bootloaders
     needs: [merge-container, build-firmwares]
     runs-on: ubuntu-latest
     permissions:
@@ -287,20 +287,20 @@ jobs:
           merge-multiple: true
           pattern: firmware-build-*
 
-      - name: Bundle firmwares
+      - name: Combine firmwares
         run: |
-          find manifests -type f -name "*_with_bootloader.y*ml" -print0 \
-            | xargs -0 /opt/venv/bin/python3 -m tools.bundle_gbl \
+          find manifests -type f -name "combined_*.y*ml" -print0 \
+            | xargs -0 /opt/venv/bin/python3 -m tools.combine_gbl \
               --artifacts artifacts \
-              --output-dir bundles
+              --output-dir combined
 
-      # Bundled GBLs share their metadata with the app GBL, so they stay out of
-      # `manifest.json` and are only published as release assets
+      # Combined GBLs stay out of `manifest.json` and are only published as release
+      # assets
       - name: Upload artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: firmware-bundles
-          path: bundles/*
+          name: firmware-combined
+          path: combined/*
           compression-level: 9
           if-no-files-found: ignore
 
@@ -344,7 +344,7 @@ jobs:
 
   release-assets:
     name: Upload release assets
-    needs: [generate-manifest, bundle-firmwares]
+    needs: [generate-manifest, combine-firmwares]
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
     permissions:
@@ -364,12 +364,12 @@ jobs:
           merge-multiple: true
           pattern: firmware-build-*
 
-      - name: Download bundled firmwares
+      - name: Download combined firmwares
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           path: artifacts
           merge-multiple: true
-          pattern: firmware-bundles
+          pattern: firmware-combined
 
       - name: Upload artifacts
         env:
