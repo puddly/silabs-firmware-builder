@@ -1,0 +1,2 @@
+app: skyconnect_openthread_rcp.yaml
+bootloader: skyconnect_bootloader.yaml

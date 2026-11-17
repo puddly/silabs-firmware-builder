@@ -1,0 +1,2 @@
+app: skyconnect_zigbee_ncp.yaml
+bootloader: skyconnect_bootloader.yaml

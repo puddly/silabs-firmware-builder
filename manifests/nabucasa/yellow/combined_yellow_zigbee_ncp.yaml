@@ -1,0 +1,2 @@
+app: yellow_zigbee_ncp.yaml
+bootloader: yellow_bootloader.yaml

@@ -1,0 +1,2 @@
+app: yellow_openthread_rcp.yaml
+bootloader: yellow_bootloader.yaml

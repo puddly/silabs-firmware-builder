@@ -1,0 +1,2 @@
+app: zbt2_openthread_rcp.yaml
+bootloader: zbt2_bootloader.yaml

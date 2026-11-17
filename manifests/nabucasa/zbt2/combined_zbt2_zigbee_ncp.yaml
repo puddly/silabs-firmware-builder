@@ -1,0 +1,2 @@
+app: zbt2_zigbee_ncp.yaml
+bootloader: zbt2_bootloader.yaml

@@ -1,0 +1,2 @@
+app: zbt2_router.yaml
+bootloader: zbt2_bootloader.yaml
