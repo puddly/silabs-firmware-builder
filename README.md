@@ -35,6 +35,31 @@ Two optional `gbl` keys fail the build when an image does not fit:
   at or below this address.
 - **`max_size`:** the largest allowed GBL file size in bytes.
 
+## GBLs with a bundled bootloader
+A manifest named `*_with_bootloader.yaml` is not built. It names an app manifest and a
+bootloader manifest, relative to itself:
+
+```yaml
+app: zwa2_controller.yaml
+bootloader: zwa2_bootloader.yaml
+```
+
+`tools.bundle_gbl` finds the GBL built from each manifest and combines them into one
+GBL, for example `zwa2_controller_1.4.1_with_bootloader_3.2.1.gbl`. It decrypts both
+GBLs, then encrypts and signs the result with the app manifest's keys and checks the
+app manifest's `max_size`. Neither firmware is rebuilt:
+
+```bash
+python -m tools.bundle_gbl \
+    --artifacts artifacts \
+    --output-dir artifacts \
+    manifests/nabucasa/zwa2/zwa2_controller_with_bootloader.yaml
+```
+
+CI bundles every `*_with_bootloader.yaml` after the firmwares are built and uploads the
+results as release assets. `manifest.json` leaves them out, because they share their
+metadata with the app GBL.
+
 # Development
 ## Setting up Simplicity Studio (for development)
 If you are going to be developing using Simplicity Studio, note that each project can

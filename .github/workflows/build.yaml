@@ -217,7 +217,8 @@ jobs:
           persist-credentials: false
       - id: set-matrix
         run: |
-          echo "matrix=$(find manifests -type f \( -name "*.yaml" -o -name "*.yml" \) -print | sort | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
+          # `*_with_bootloader` manifests are not built, `bundle-firmwares` handles them
+          echo "matrix=$(find manifests -type f \( -name "*.yaml" -o -name "*.yml" \) -not -name "*_with_bootloader.y*ml" -print | sort | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
 
   build-firmwares:
     name: Firmware builder
@@ -263,6 +264,46 @@ jobs:
           compression-level: 9
           if-no-files-found: error
 
+  bundle-firmwares:
+    name: Bundle firmwares with bootloaders
+    needs: [merge-container, build-firmwares]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    container:
+      # Tag is the hash of the Dockerfile and uv.lock, built by this workflow
+      image: ${{ needs.merge-container.outputs.container_name }} # zizmor: ignore[unpinned-images]
+      options: --user root
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Download all workflow artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: artifacts
+          merge-multiple: true
+          pattern: firmware-build-*
+
+      - name: Bundle firmwares
+        run: |
+          find manifests -type f -name "*_with_bootloader.y*ml" -print0 \
+            | xargs -0 /opt/venv/bin/python3 -m tools.bundle_gbl \
+              --artifacts artifacts \
+              --output-dir bundles
+
+      # Bundled GBLs share their metadata with the app GBL, so they stay out of
+      # `manifest.json` and are only published as release assets
+      - name: Upload artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: firmware-bundles
+          path: bundles/*
+          compression-level: 9
+          if-no-files-found: ignore
+
   generate-manifest:
     name: Generate manifest
     needs: [merge-container, build-firmwares]
@@ -303,7 +344,7 @@ jobs:
 
   release-assets:
     name: Upload release assets
-    needs: [generate-manifest]
+    needs: [generate-manifest, bundle-firmwares]
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
     permissions:
@@ -322,6 +363,13 @@ jobs:
           path: artifacts
           merge-multiple: true
           pattern: firmware-build-*
+
+      - name: Download bundled firmwares
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: artifacts
+          merge-multiple: true
+          pattern: firmware-bundles
 
       - name: Upload artifacts
         env:
