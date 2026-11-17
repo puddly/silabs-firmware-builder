@@ -425,6 +425,11 @@ def remap_debug_build_paths(elf_path: pathlib.Path, prefix_map: dict[str, str]) 
             f.write(data)
 
 
+# Manifests ending in this are not built: each names an app manifest and a bootloader
+# manifest, whose GBLs `bundle_gbl` combines into one
+BUNDLE_MANIFEST_SUFFIX = "_with_bootloader"
+
+
 @dataclasses.dataclass(frozen=True)
 class Manifest:
     """A build manifest."""
@@ -465,6 +470,14 @@ class Manifest:
         # `gbl.encrypt_key` points into the generated project, where the manifest's
         # `config_file` entries are copied under that same relative path
         return self.path.parent / self.gbl["encrypt_key"]
+
+    @property
+    def signing_key_path(self) -> pathlib.Path | None:
+        """The image signing key, if the manifest signs its firmware."""
+        if "sign_key" not in self.gbl:
+            return None
+
+        return self.path.parent / self.gbl["sign_key"]
 
     @property
     def version_key(self) -> str | None:

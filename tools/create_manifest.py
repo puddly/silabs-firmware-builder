@@ -22,7 +22,7 @@ from pygbl import (
     read_encryption_key,
 )
 
-from .build_project import Manifest
+from .build_project import BUNDLE_MANIFEST_SUFFIX, Manifest
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -57,7 +57,10 @@ def parse_markdown_changelog(text: str) -> list[dict[str, str | None]]:
 def load_manifests(directory: pathlib.Path) -> list[Manifest]:
     """Load every build manifest below a directory."""
     paths = sorted(
-        path for pattern in ("*.yaml", "*.yml") for path in directory.rglob(pattern)
+        path
+        for pattern in ("*.yaml", "*.yml")
+        for path in directory.rglob(pattern)
+        if not path.stem.endswith(BUNDLE_MANIFEST_SUFFIX)
     )
 
     return [Manifest.load(path) for path in paths]
