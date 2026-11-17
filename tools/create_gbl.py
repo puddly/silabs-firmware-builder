@@ -120,25 +120,21 @@ def check_gbl_size(name: str, data: bytes, limit: int | None) -> None:
 
 def finalize_gbl(
     image: GBL3Image,
-    gbl_metadata: dict[str, Any],
-    project_root: pathlib.Path,
-    gsdk_path: pathlib.Path,
+    compression: str | None,
+    encrypt_key_path: pathlib.Path | None,
+    sign_key_path: pathlib.Path | None,
 ) -> bytes:
-    """Compress, encrypt and sign an image as the manifest says, then serialize it."""
+    """Compress, encrypt and sign an image, then serialize it."""
     # The order matters: compression only touches program data, encryption then wraps
     # every tag but the header, and the signature covers the resulting ciphertext
-    if gbl_metadata.get("compression", None) is not None:
-        image = image.compress(GBL3Compression(gbl_metadata["compression"]))
+    if compression is not None:
+        image = image.compress(GBL3Compression(compression))
 
-    if gbl_metadata.get("encrypt_key", None) is not None:
-        key_path = resolve_key_path(
-            gbl_metadata["encrypt_key"], project_root, gsdk_path
-        )
-        image = image.encrypt(read_encryption_key(key_path.read_text()))
+    if encrypt_key_path is not None:
+        image = image.encrypt(read_encryption_key(encrypt_key_path.read_text()))
 
-    if gbl_metadata.get("sign_key", None) is not None:
-        key_path = resolve_key_path(gbl_metadata["sign_key"], project_root, gsdk_path)
-        private_key = load_pem_private_key(key_path.read_bytes(), password=None)
+    if sign_key_path is not None:
+        private_key = load_pem_private_key(sign_key_path.read_bytes(), password=None)
         assert isinstance(private_key, ec.EllipticCurvePrivateKey)
         image = image.sign(private_key)
 
@@ -324,7 +320,20 @@ def create_gbl(
                 f, metadata=metadata_json if gbl_metadata else None
             )
 
-    gbl = finalize_gbl(image, gbl_metadata, project_root, gsdk_path)
+    gbl = finalize_gbl(
+        image,
+        compression=gbl_metadata.get("compression", None),
+        encrypt_key_path=(
+            resolve_key_path(gbl_metadata["encrypt_key"], project_root, gsdk_path)
+            if gbl_metadata.get("encrypt_key", None) is not None
+            else None
+        ),
+        sign_key_path=(
+            resolve_key_path(gbl_metadata["sign_key"], project_root, gsdk_path)
+            if gbl_metadata.get("sign_key", None) is not None
+            else None
+        ),
+    )
     check_gbl_size(elf.with_suffix(".gbl").name, gbl, gbl_metadata.get("max_size"))
     elf.with_suffix(".gbl").write_bytes(gbl)
 
