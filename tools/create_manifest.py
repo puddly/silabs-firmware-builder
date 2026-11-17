@@ -22,7 +22,7 @@ from pygbl import (
     read_encryption_key,
 )
 
-from .build_project import COMBINED_PREFIX, Manifest
+from .build_project import COMBINED_PREFIX, CombinedManifest, Manifest
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -54,16 +54,29 @@ def parse_markdown_changelog(text: str) -> list[dict[str, str | None]]:
     return entries
 
 
-def load_manifests(directory: pathlib.Path) -> list[Manifest]:
-    """Load every build manifest below a directory."""
-    paths = sorted(
-        path
-        for pattern in ("*.yaml", "*.yml")
-        for path in directory.rglob(pattern)
-        if not path.name.startswith(COMBINED_PREFIX)
+def manifest_paths(directory: pathlib.Path) -> list[pathlib.Path]:
+    """Every manifest below a directory, build or combined."""
+    return sorted(
+        path for pattern in ("*.yaml", "*.yml") for path in directory.rglob(pattern)
     )
 
-    return [Manifest.load(path) for path in paths]
+
+def load_manifests(directory: pathlib.Path) -> list[Manifest]:
+    """Load every build manifest below a directory."""
+    return [
+        Manifest.load(path)
+        for path in manifest_paths(directory)
+        if not path.name.startswith(COMBINED_PREFIX)
+    ]
+
+
+def load_combined_manifests(directory: pathlib.Path) -> list[CombinedManifest]:
+    """Load every combined manifest below a directory."""
+    return [
+        CombinedManifest.load(path)
+        for path in manifest_paths(directory)
+        if path.name.startswith(COMBINED_PREFIX)
+    ]
 
 
 def is_encrypted(firmware: FirmwareImage) -> bool:
@@ -74,7 +87,9 @@ def is_encrypted(firmware: FirmwareImage) -> bool:
     return GBL3Type.ENCRYPTION_AESCCM in firmware.get_first_tag(GBL3Header).type
 
 
-def unlock(manifest: Manifest, firmware: FirmwareImage) -> FirmwareImage | None:
+def unlock(
+    manifest: Manifest | CombinedManifest, firmware: FirmwareImage
+) -> FirmwareImage | None:
     """Open an image with a manifest's own key, or `None` if it did not build it."""
     if is_encrypted(firmware) != (manifest.encryption_key_path is not None):
         return None
@@ -114,9 +129,24 @@ def metadata_mismatches(
     return mismatches
 
 
-def find_manifest(
-    manifests: list[Manifest], firmware: FirmwareImage, stem: str
-) -> tuple[Manifest, dict[str, typing.Any]] | None:
+def combined_metadata_mismatches(
+    manifest: CombinedManifest, metadata: dict[str, typing.Any]
+) -> list[str]:
+    """Describe every way a combined image's metadata disagrees with its manifests."""
+    return [
+        *metadata_mismatches(manifest.app, metadata),
+        *(
+            f"bootloader {mismatch}"
+            for mismatch in metadata_mismatches(
+                manifest.bootloader, metadata["bootloader"]
+            )
+        ),
+    ]
+
+
+def find_manifest[T: (Manifest, CombinedManifest)](
+    manifests: list[T], firmware: FirmwareImage, stem: str
+) -> tuple[T, dict[str, typing.Any]] | None:
     """Find the manifest whose build produced a firmware file, and read its metadata."""
     matches = []
 
@@ -167,7 +197,13 @@ def main():
     args = parser.parse_args()
 
     manifests = load_manifests(args.manifests)
-    _LOGGER.info("Loaded %d manifests from %s", len(manifests), args.manifests)
+    combined_manifests = load_combined_manifests(args.manifests)
+    _LOGGER.info(
+        "Loaded %d manifests and %d combined manifests from %s",
+        len(manifests),
+        len(combined_manifests),
+        args.manifests,
+    )
 
     output = {
         "metadata": {
@@ -178,7 +214,7 @@ def main():
     }
 
     inconsistent = False
-    matched: dict[pathlib.Path, Manifest] = {}
+    matched: set[pathlib.Path] = set()
     changelogs: dict[str, list[dict[str, str | None]]] = {}
 
     for firmware_file in sorted(args.artifacts.glob("*.gbl")):
@@ -190,7 +226,10 @@ def main():
             _LOGGER.warning("Ignoring invalid firmware file: %s", firmware_file)
             continue
 
-        match = find_manifest(manifests, firmware, firmware_file.stem)
+        if firmware_file.stem.startswith(COMBINED_PREFIX):
+            match = find_manifest(combined_manifests, firmware, firmware_file.stem)
+        else:
+            match = find_manifest(manifests, firmware, firmware_file.stem)
 
         if match is None:
             _LOGGER.error(
@@ -200,7 +239,15 @@ def main():
             continue
 
         source_manifest, metadata = match
-        mismatches = metadata_mismatches(source_manifest, metadata)
+
+        if isinstance(source_manifest, CombinedManifest):
+            mismatches = combined_metadata_mismatches(source_manifest, metadata)
+
+            # The version and changelog of a combined GBL are its app's
+            app_manifest = source_manifest.app
+        else:
+            mismatches = metadata_mismatches(source_manifest, metadata)
+            app_manifest = source_manifest
 
         if mismatches:
             _LOGGER.error(
@@ -212,8 +259,8 @@ def main():
             inconsistent = True
             continue
 
-        matched[source_manifest.path] = source_manifest
-        version_key = source_manifest.version_key
+        matched.add(source_manifest.path)
+        version_key = app_manifest.version_key
         version = metadata[version_key] if version_key else None
 
         fw = {
@@ -229,7 +276,7 @@ def main():
 
         # The manifest names the source directory the changelog lives in
         fw_type = metadata["fw_type"]
-        changelog_md = source_manifest.base_project_path / "CHANGELOG.md"
+        changelog_md = app_manifest.base_project_path / "CHANGELOG.md"
 
         if fw_type not in changelogs:
             if changelog_md.exists():
@@ -258,7 +305,7 @@ def main():
         fw["release_notes"] = entry["summary"]
         fw["release_summary"] = entry["notes"]
 
-    for unbuilt in manifests:
+    for unbuilt in [*manifests, *combined_manifests]:
         if unbuilt.path not in matched:
             _LOGGER.warning("Manifest %s produced no firmware", unbuilt.path)
 
